@@ -1,0 +1,118 @@
+---
+title: "US State Vaccinations"
+author: "Jefferson Santos - ANA 515"
+date: '11/09/2021'
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+This dataset provides information about all the vaccinations by US State. 
+It has been collected from two main websites: https://ourworldindata.org/us-states-vaccinations and https://covid.ourworldindata.org/data/vaccinations/us_state_vaccinations.csv
+It has vaccines data like: total distributed, people vaccinated, daily vaccinations e share doses used.This is saved as .csv file (comma-separated file). We can open it using microsoft excel or any text editor.
+
+```{r}
+# using read.csv function and assigning it to an object
+# We will use the built in read.csv(...) function call, which reads the data in as a data frame, and assign the data frame to a variable (using <-) so that it is stored in R’s memory.
+data <- read.csv('us_state_vaccinations.csv')
+```
+
+```{r results = TRUE}
+# getting the column names
+colnames(data)
+```
+
+```{r results = FALSE}
+# renaming columns
+data <- rename(data, state = location)
+```
+
+```{r results = FALSE}
+# removing few columns from the dataset
+data_subset <- select(data, date,	state,	total_vaccinations, total_distributed, people_fully_vaccinated, daily_vaccinations, share_doses_used)
+```
+
+```{r results = TRUE}
+# getting the column names again to confirm the changes
+colnames(data_subset)
+```
+
+```{r results = TRUE}
+# getting the dimensions of the data subset
+dimensions <- dim(data_subset)
+```
+
+This dataframe has `r dimensions[1]` rows and `r dimensions[2]` columns. The names of the columns and a brief description of each are in the table below:
+
+```{r results = TRUE}
+library(knitr)
+
+columns_summary <- data.frame(
+  Columns = c(colnames(data_subset)),
+  Description = c(
+    "Date of the information been provided",
+    "US State/Location",
+    "Cumulative vaccinations at that date per state",
+    "Cumulative distribuition at that date per state",
+    "Cumulative people fully vaccinated at that date per state",
+    "Total of people vaccinated on that date per state",
+    "The ratio between Cumulative distribuition by Cumulative vaccinations"
+  )
+)
+
+kable(columns_summary, caption = "US State Vaccinations Columns Description")
+```
+
+```{r results = FALSE}
+#filtering the data by location = entire US instead of by State to avoid an incorret summary below
+data_us <- filter(data_subset, state == "United States")
+
+# picking three columns to use summary function
+data_pick3 <- select(data_us, people_fully_vaccinated, daily_vaccinations, share_doses_used)
+
+# Summary functions (min, max, mean, missing values)
+pfv_min <- format(big.mark=",", scientific=FALSE,round(min(data_pick3$people_fully_vaccinated, na.rm=TRUE),2), nsmall = 2)
+pfv_max <- format(big.mark=",", scientific=FALSE,round(max(data_pick3$people_fully_vaccinated, na.rm=TRUE),2), nsmall = 2)
+pfv_mean <- format(big.mark=",", scientific=FALSE,round(mean(data_pick3$people_fully_vaccinated, na.rm=TRUE),2), nsmall = 2)
+pfv_sumna <- sum(is.na(data_pick3$people_fully_vaccinated))
+
+dv_min <- format(big.mark=",", scientific=FALSE,round(min(data_pick3$daily_vaccinations, na.rm=TRUE),2), nsmall = 2)
+dv_max <- format(big.mark=",", scientific=FALSE,round(max(data_pick3$daily_vaccinations, na.rm=TRUE),2), nsmall = 2)
+dv_mean <- format(big.mark=",", scientific=FALSE,round(mean(data_pick3$daily_vaccinations, na.rm=TRUE),2), nsmall = 2)
+dv_sumna <- sum(is.na(data_pick3$daily_vaccinations))
+
+sdu_min <- format(big.mark=",", scientific=FALSE,round(min(data_pick3$share_doses_used, na.rm=TRUE),2), nsmall = 2)
+sdu_max <- format(big.mark=",", scientific=FALSE,round(max(data_pick3$share_doses_used, na.rm=TRUE),2), nsmall = 2)
+sdu_mean <- format(big.mark=",", scientific=FALSE,round(mean(data_pick3$share_doses_used, na.rm=TRUE),2), nsmall = 2)
+sdu_sumna <- sum(is.na(data_pick3$share_doses_used))
+```
+
+```{r results = TRUE}
+summary_stats <- data.frame(
+  Summary = c(colnames(data_pick3)),
+  Min = c(pfv_min,
+          dv_min,
+          sdu_min
+  ),
+  Max = c(pfv_max,
+          dv_max,
+          sdu_max
+  ),
+  Mean = c(pfv_mean,
+          dv_mean,
+          sdu_mean
+  ),
+  NAs = c(pfv_sumna,
+          dv_sumna,
+          sdu_sumna
+  )
+)
+
+kable(t(summary_stats), caption = "US Vaccinations Summary Stats")
+```
